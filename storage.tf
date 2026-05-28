@@ -17,8 +17,18 @@ resource "docker_container" "data_ingestor" {
         name = docker_network.ingestion_vpc.name
     }
 
+    labels {
+        label = "tf_resource_name"
+        value = "fraud-etl"
+    }
+
     volumes {
         volume_name = docker_volume.raw_landing_storage.name
+        container_path = "/app/extra_storage"
+    }
+
+    volumes {
+        host_path = "/mnt/c/Users/mofog/Downloads" # Your WSL path to Windows Downloads
         container_path = "/app/raw_data"
     }
 
@@ -31,11 +41,15 @@ resource "docker_container" "data_ingestor" {
 #analytics container
 resource "docker_container" "localstack_analytics" {
     name = "aws-storage-emulator"
-    image = "localstack/localstack:latest"
+    image = "localstack/localstack:0.14.0"
 
     # apply to analytics Network  using advanced settings in terraform
     networks_advanced { 
         name = docker_network.analytics_vpc.name
+    }
+    labels {
+        label = "tf_resource_name"
+        value = "fraud-etl"
     }
 
     #mount  volume for gold tables
@@ -54,6 +68,11 @@ resource "docker_container" "spark_processor" {
 
     networks_advanced {name = docker_network.ingestion_vpc.name}
     networks_advanced {name = docker_network.analytics_vpc.name}
+
+    labels {
+        label = "tf_resource_name"
+        value = "fraud-etl"
+    }
 
     env = [
         "SPARK_MODE=master",
